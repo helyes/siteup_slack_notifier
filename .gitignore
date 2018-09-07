@@ -1,0 +1,7 @@
+# all subfolders
+# This ispurely bc lambda requires all pip libraries installed in root folder
+*/*
+
+# all dotfiles except .gitignore
+.*
+!.gitignore
