@@ -14,9 +14,16 @@ Set webhook_url and CHANNEL to the one provided by Slack when you [create the we
 
 ## Install dependencies
 
-Pythoin dependencies must be installed in the project root folder. This is required by amazon lambda. Files are not checked in to repo but must be uploaded to aws.
+Python dependencies must be installed in the project root folder. This is required by amazon lambda. Files are not checked in to repo but must be uploaded to aws.
 
 `pip install requests -t <project folder>`
+
+On Mac, if python was installed by Homebrew, the abvoe will not work. Please add `setup.cfg` to project root with below content
+
+```
+[install]
+prefix= 
+```
 
 ## Zip before upload
 
