@@ -63,46 +63,62 @@ def lambda_handler(event, context):
     enrich_event(event)
     ret = {
         "trigger_event": event,
-        "start_at" : format(str(now))   
+        "start_at" : format(str(now)),
+        "http_response_code" : 0
     }
-    print('Checking {} at {}...'.format(event['site'], format(str(now))))
+    
     try:
+        # need to validate trigger event
+        print('Checking {} at {}...'.format(event['site'], format(str(now))))
         opener = urllib2.build_opener()
         opener.addheaders = [('User-Agent', 'AWS Lambda')]
-        if not validate(opener.open(event['site']).read(), event['site_expected_text']):
+        result = opener.open(event['site'])
+        ret['http_response_code']= result.getcode()
+        if not validate(result.read(), event['site_expected_text']):
             raise Exception('Validation failed')
-        
-    except:
-        print('Check failed! - posting message to slack')
+
+    except urllib2.HTTPError, ue:
+        print('Check failed. ' + str(ue))
         ret['result_code'] = 1
-        ret['result'] = event['site'] + " might be offline, did not found [" + event['site_expected_text'] + "]."        
-        raise
+        ret['result'] = event['site'] + " might be offline. " + str(ue)
+        ret['http_response_code']= ue.code
+    except urllib2.URLError, u:
+        print('Check failed. ' + str(u))
+        ret['result_code'] = 2
+        ret['result'] = event['site'] + " might be offline. " + str(u)
+    except Exception, e:
+        print('Check failed. ' + str(e))
+        ret['result_code'] = 3
+        ret['result'] = event['site'] + " might be offline, did not found [" + event['site_expected_text'] + "]. " + str(e)
     else:
-        print('Check passed!')
+        print('Check passed')        
         ret['result_code'] = 0                
-        ret['result'] = event['site'] + " is online. Found [" + event['site_expected_text'] + "]."
-    finally:
-        end_at = datetime.now()
-        ret['end_at'] = format(str(end_at))
-        ret['duration_ms'] = int((end_at - now).total_seconds() * 1000)
-        print('Check complete at {}'.format(str(datetime.now())))
-        ret['message']=ret['result'] + " Response time: " + str(ret['duration_ms']) + "ms"
-        if is_notification_enabled(event, ret):
-            post_to_slack(ret['message'], 
-                          event["icon_emoji_success"] if ret['result_code'] == 0  else event["icon_emoji_failure"], 
-                          event['slack_enabled']
-                          )     
-        return ret
+        ret['result'] = event['site'] + " is online. Found [" + event['site_expected_text'] + "]"        
+   
+    end_at = datetime.now()
+    ret['end_at'] = format(str(end_at))
+    ret['duration_ms'] = int((end_at - now).total_seconds() * 1000)
+    #print('Check complete at {}'.format(str(datetime.now())))
+    #print ("Response payload: " + json.dumps(ret ,indent=4, sort_keys=True))
+    print ("Response payload: " + json.dumps(ret))
+    ret['message']=ret['result'] + ". Response time: " + str(ret['duration_ms']) + "ms"
+    if is_notification_enabled(event, ret):
+        post_to_slack(ret['message'], 
+                        event["icon_emoji_success"] if ret['result_code'] == 0  else event["icon_emoji_failure"], 
+                        event['slack_enabled']
+                        )     
+    return ret
 
 sample_event = {
-    "site": 'https://app.shiftcare.com',
-    "site_expected_text": 'ShiftCare',
+    "site": 'https://app-stg.shiftcare.com',
+    #"site": 'https://shift.free.beeceptor.com/my/api/path/1',    
+    "site_expected_text": 'Sign in to start your session',
     "report_failure": True,
-    "report_success": False,
-    "slack_enabled": True,
+    "report_success": True,
+    "slack_enabled": False,
    "icon_emoji_failure": ":sob:",
 }
 
 response=lambda_handler(sample_event,'B')
-print ("\nResponse:\n" + json.dumps(response, indent=4, sort_keys=True))
+print ("\n---------------------\nResponse:\n" + json.dumps(response, indent=4, sort_keys=True))
 #print ("Response:\n" + lambda_handler(sample_event,'B'))
