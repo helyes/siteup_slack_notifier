@@ -75,7 +75,7 @@ def lambda_handler(event, context):
         result = opener.open(event['site'])
         ret['http_response_code']= result.getcode()
         if not validate(result.read(), event['site_expected_text']):
-            raise Exception('Validation failed')
+            raise Exception('Validation failed.')
 
     except urllib2.HTTPError, ue:
         print('Check failed. ' + str(ue))
@@ -91,10 +91,12 @@ def lambda_handler(event, context):
         ret['result_code'] = 3
         ret['result'] = event['site'] + " might be offline, did not found [" + event['site_expected_text'] + "]. " + str(e)
     else:
-        print('Check passed')        
+        print('Check passed. GET {} includes [{}]'.format(event['site'], event['site_expected_text']))
         ret['result_code'] = 0                
         ret['result'] = event['site'] + " is online. Found [" + event['site_expected_text'] + "]"        
-   
+    finally:
+        opener.close()
+
     end_at = datetime.now()
     ret['end_at'] = format(str(end_at))
     ret['duration_ms'] = int((end_at - now).total_seconds() * 1000)
