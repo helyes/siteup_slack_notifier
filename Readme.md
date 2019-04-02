@@ -1,10 +1,10 @@
 # Site poller
 
-Simple generic lambda fucntion triggered by cloudwatch events.
+Configurable database poller that posts slack message if first row firscifigured query resultset is noand alert slack alerter lambda function
 
 ## Prerequisites
 
-* Python 2.7
+* Slack webhook
 
 **Environment vaiables:**
 * `CHANNEL="#devops"`
@@ -14,19 +14,10 @@ Set webhook_url and CHANNEL to the one provided by Slack when you [create the we
 
 ## Install dependencies
 
-Python dependencies must be installed in the project root folder. This is required by amazon lambda. Files are not checked in to repo but must be uploaded to aws.
-
-`pip install requests -t <project folder>`
-
-On Mac, if python was installed by Homebrew, the abvoe will not work. Please add `setup.cfg` to project root with below content
-
-```
-[install]
-prefix= 
-```
+`yarn install`
 
 ## Zip before upload
 
 Files in teh artifact zip need to be in root folder.
 
-`zip -rq ../lamdba_$(date +%Y%m%d-%H%M%S).zip *`
+`zip -rq ../lamdba_db_poll$(date +%Y%m%d-%H%M%S).zip *`
